@@ -1,7 +1,7 @@
 const Product = require("../models/productModel");
 const ErrorHander = require("../utils/errorhander");
-const catchAsyncErrors =require("../middleware/catchAsyncError");
-const catchAsyncError = require("../middleware/catchAsyncError");
+const catchAsyncErrors =require("../middleware/catchAsyncErrors");
+
 const ApiFeatures = require("../utils/apifeatures");
 // Create Product - Admin
 exports.createProduct =catchAsyncErrors( async (req, res, next) => {
@@ -14,18 +14,24 @@ exports.createProduct =catchAsyncErrors( async (req, res, next) => {
 
 // Get All Products
 exports.getAllProducts =catchAsyncErrors( async (req, res) => {
+    const resultPerPage=5;
+    const productCount=await Product.countDocuments();
     const apiFeature = new ApiFeatures(Product.find(),req.query)
-    const products =await Product.find();
+    .search()
+    .filter()
+    .pagination(resultPerPage);
+    const products =await apiFeature.query;
 
     res.status(200).json({
         success: true,
-        products
+        products,
+        productCount,
     });
 });
 
-
+ 
 // udpate  -- Admin function
-exports.updateProduct  =catchAsyncError(async ( req , res, next) => {
+exports.updateProduct  =catchAsyncErrors(async ( req , res, next) => {
     let product = await Product.findById(req.params.id);
     if (!product) {
         return next(new ErrorHander("Product not found", 404));
@@ -40,24 +46,25 @@ exports.updateProduct  =catchAsyncError(async ( req , res, next) => {
     res.status(200).json({
         success : true,
         product
-    })
+    });
 });
 
-// next is middleware function provided by express 
-exports.getProductDetails =catchAsyncError(async(req,res, next) =>{
+exports.getProductDetails = catchAsyncErrors(async (req, res, next) => {
     const product = await Product.findById(req.params.id);
+
     if (!product) {
         return next(new ErrorHander("Product not found", 404));
     }
+
     res.status(200).json({
-        success : true,
-        product
-    })
-
-
+        success: true,
+        product,
+    
+    });
 });
+
 // delete product -- Admin
-exports.deleteProduct = catchAsyncError(async (req, res, next) => {
+exports.deleteProduct = catchAsyncErrors(async (req, res, next) => {
     const product = await Product.findById(req.params.id);
 
     if (!product) {
